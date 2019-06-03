@@ -5,10 +5,36 @@ from tkinter import messagebox
 from tkinter import *
 import redis
 import re
+import threading
+import time
 import logging
 logging.basicConfig(level=logging.INFO)
 
+redis_cl = None
+
+def thread_test(r, tree):
+    while True:
+        x = tree.get_children()
+        for i in x:
+            tree.delete(i)
+
+        all_keys = r.keys()
+        for i in all_keys:
+            tree.insert('', 'end', values=(bytes.decode(i), bytes.decode(r.get(i))))
+        time.sleep(1)
+
+def exit_button():
+    """
+    退出按钮方法
+    :return:
+    """
+    exit()
+
 def do_job():
+    """
+    占位
+    :return:
+    """
     messagebox.showinfo(message = "myRedisManager Version 0.0.1", title = "myRedisManager")
 
 def detect_ip_input(redis_address):
@@ -23,6 +49,13 @@ def detect_ip_input(redis_address):
         return 0
 
 def window_config(window_width, window_height, root_window):
+    """
+    窗口配置方法
+    :param window_width:
+    :param window_height:
+    :param root_window:
+    :return:
+    """
     def redis_connect():
         # 获取entry控件内的数据
         redis_address = Entry_address.get()
@@ -40,6 +73,9 @@ def window_config(window_width, window_height, root_window):
                 r = redis.StrictRedis(host=redis_address, port=redis_port, password=redis_password, db=redis_DB_num,
                                       socket_connect_timeout=3)
                 logging.info(str(r.get('NetStatus')))
+                t1 = threading.Thread(target=thread_test, args=(r, tree))
+                t1.setDaemon(True)
+                t1.start()
             except ConnectionRefusedError as e:
                 messagebox.showinfo(message='错误IP地址提示:\n' + str(e), title='提示')
             except redis.exceptions.ConnectionError as e:
@@ -84,32 +120,42 @@ def window_config(window_width, window_height, root_window):
 
     # 界面布局
     Label_address = Label(root_window, text='Redis服务器地址：')
-    Label_address.grid(row=0,column=0)
+    Label_address.grid(row=0, column=0, sticky=W)
     Entry_address = Entry(root_window)
-    Entry_address.grid(row=0,column=1)
+    Entry_address.grid(row=0, column=1, sticky=E)
 
     Label_port = Label(root_window, text='Redis服务器端口号：')
-    Label_port.grid(row=1, column=0)
+    Label_port.grid(row=1, column=0, sticky=W)
     Entry_port = Entry(root_window)
-    Entry_port.grid(row=1, column=1)
+    Entry_port.grid(row=1, column=1, sticky=E)
 
     Label_DB_num = Label(root_window, text='RedisDB号：')
-    Label_DB_num.grid(row=2, column=0)
+    Label_DB_num.grid(row=2, column=0, sticky=W)
     Entry_DB_num = Entry(root_window)
-    Entry_DB_num.grid(row=2, column=1)
+    Entry_DB_num.grid(row=2, column=1, sticky=E)
 
     Label_password = Label(root_window, text='Redis服务器密码：')
-    Label_password.grid(row=3, column=0)
+    Label_password.grid(row=3, column=0, sticky=W)
     Entry_password = Entry(root_window, show='*')
-    Entry_password.grid(row=3, column=1)
+    Entry_password.grid(row=3, column=1, sticky=E)
 
     button_connect = Button(text='连接', command=redis_connect)
-    button_connect.grid(row=4, column=0)
+    button_connect.grid(row=4, column=0, sticky=W+E+N+S)
+    button_exit = Button(text='退出', command=exit_button)
+    button_exit.grid(row=4, column=1, sticky=W + E + N + S)
 
-    tree = ttk.Treeview(root_window, columns=['1', '2', '3', '4', '5'], show='headings')
-    tree.grid(row=5, column=0, columnspan=6)
-    tree.insert('', 'end', values='11')
+    # 默认值配置区
+    Entry_address.insert(END, '')
+    Entry_port.insert(END, '')
+    Entry_DB_num.insert(END, '')
+    Entry_password.insert(END, '')
 
-root_window = tk.Tk()
-window_config(900, 350, root_window)
-root_window.mainloop()
+    tree = ttk.Treeview(root_window, columns=['1', '2'], show='headings')
+    tree.heading('1', text='Key')
+    tree.heading('2', text='Value')
+    tree.grid(row=5, column=0, columnspan=2, sticky=W+E+N+S)
+
+if __name__ == '__main__':
+    root_window = tk.Tk()
+    window_config(405, 350, root_window)
+    root_window.mainloop()
