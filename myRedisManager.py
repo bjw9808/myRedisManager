@@ -13,11 +13,10 @@ logging.basicConfig(level=logging.INFO)
 redis_cl = None
 
 def thread_test(r, tree):
-    while True:
+    # while True:
         x = tree.get_children()
         for i in x:
             tree.delete(i)
-
         all_keys = r.keys()
         for i in all_keys:
             tree.insert('', 'end', values=(bytes.decode(i), bytes.decode(r.get(i))))
@@ -154,6 +153,11 @@ def window_config(window_width, window_height, root_window):
     tree.heading('1', text='Key')
     tree.heading('2', text='Value')
     tree.grid(row=5, column=0, columnspan=2, sticky=W+E+N+S)
+
+    # 滚动条控件
+    vbar = ttk.Scrollbar(root_window, orient=VERTICAL, command=tree.yview)
+    tree.configure(yscrollcommand=vbar.set)
+    vbar.grid(row=5, column=1, columnspan=3, sticky=S + N + E)
 
 if __name__ == '__main__':
     root_window = tk.Tk()
